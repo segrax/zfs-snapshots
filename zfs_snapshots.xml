@@ -1,0 +1,34 @@
+<?xml version='1.0' standalone='yes'?>
+
+<zfs>
+	<fs>
+		<fs id="storage" name="syko/storage" recursive="yes"/>
+		<fs id="home"    name="syko/home"    recursive="yes"/>
+		<fs id="jails"   name="syko/jails"   recursive="yes"/>
+	</fs>
+
+	<time time="03:00:00" keep="1">
+		<hour keep="3">
+			<home/>
+		</hour>
+
+		<day time="02:00:00" keep="2">
+			<storage/>
+			<home/>
+			<jails/>
+		</day>
+		
+		<week keep="2">
+			<storage/>
+			<home/>
+			<jails/>
+		</week>
+
+		<month keep="2">
+			<storage/>
+			<home/>
+			<jails/>
+		</month>
+	</time>
+
+</zfs>

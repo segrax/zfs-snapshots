@@ -8,13 +8,13 @@ define('ZFS_SNAP_ADD',  'snapshot');
 define('ZFS_SNAP_REM',  'destroy');
 define('ZFS_SNAP_LIST', 'list -t snapshot');
 
-define('ZFS_SNAP_OUT', 'NAME                                     USED  AVAIL  REFER  MOUNTPOINT');
+define('ZFS_SNAP_OUT', 	'NAME                                     USED  AVAIL  REFER  MOUNTPOINT');
 
-define('SNAP_HOUR', 'hourly-');
-define('SNAP_DAY',  'daily-%Y-%m-%d');
-define('SNAP_WEEK', 'weekly-%Y-%W');
-define('SNAP_MONTH','monthly-%Y-%m');
-define('SNAP_YEAR', 'yearly-%Y');
+define('SNAP_HOUR', 	'hourly-');
+define('SNAP_DAY',  	'daily-%Y-%m-%d');
+define('SNAP_WEEK', 	'weekly-%Y-%W');
+define('SNAP_MONTH',	'monthly-%Y-%m');
+define('SNAP_YEAR', 	'yearly-%Y');
 
 define('DEBUG', true);
 
@@ -30,12 +30,13 @@ function main($argc, array $argv) {
     $rev = substr( ZFS_SNAP_REVISION, 11, -2 );
     $rev .= ' @ ' . substr( ZFS_SNAP_REVISION_DATE, 7, 19 );
     
-    $commit = "zfs-snapshots (svn revision: $rev)\n\n";
+    $snapver = "zfs-snapshots (svn revision: $rev)\n\n";
+    echo $snapver;
     
     $snaps = new cSnapshots( ZFS_SNAP_CONF);
     
     $snaps->zfsSnapshotRemoveOld();
-    
+    $snaps->zfsSnapshotCreateNew();
 }
 
 class cFilesystem {
@@ -192,9 +193,29 @@ class cSnapshots {
 
     public function zfsSnapshotCreateNew() {
 
+        // Loop each time frame
         foreach( $this->_Times as $time ) {
 
+            // Loop each filesystem 
+            foreach( $time->_Snapshots as $fsDataset => $fs ) {
             
+                // has time elapsed since latest snapshot?
+                $fsCount = count( $fs );
+                
+                // Number of snapshots exceeds limit for this time frame?
+                //if( $fsCount > $time->_Keep ) {
+
+                    // Sort by timestamp
+                    uasort( $fs, array($this, 'snapshotSort'));
+                    
+                    $latest = $fs[ $fsCount - 1];
+                    
+                    
+                    // if timestamp is older than now - (timeframe)
+                    $latest->_Timestamp;
+
+                //}
+            }
         }
         
     }

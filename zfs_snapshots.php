@@ -18,11 +18,19 @@ define('SNAP_YEAR', 'yearly-%Y');
 
 define('DEBUG', true);
 
+define('ZFS_SNAP_REVISION', 	 '$Revision$');
+define('ZFS_SNAP_REVISION_DATE', '$Date$');
+
 date_default_timezone_set('Australia/Melbourne');
 
 main($argc, $argv);
 
 function main($argc, array $argv) { 
+
+    $rev = substr( ZFS_SNAP_REVISION, 11, -2 );
+    $rev .= ' @ ' . substr( ZFS_SNAP_REVISION_DATE, 7, 19 );
+    
+    $commit = "zfs-snapshots (svn revision: $rev)\n\n";
     
     $snaps = new cSnapshots( ZFS_SNAP_CONF);
     

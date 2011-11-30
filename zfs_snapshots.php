@@ -10,7 +10,7 @@ define('ZFS_SNAP_LIST', 'list -t snapshot');
 
 define('ZFS_SNAP_OUT', 	'NAME                                     USED  AVAIL  REFER  MOUNTPOINT');
 
-define('SNAP_HOUR', 	'hourly-');
+define('SNAP_HOUR', 	'hourly-%Y-%m-%d-%H');
 define('SNAP_DAY',  	'daily-%Y-%m-%d');
 define('SNAP_WEEK', 	'weekly-%Y-%W');
 define('SNAP_MONTH',	'monthly-%Y-%m');
@@ -62,6 +62,11 @@ class cZfsSnapshot {
     public $_Dataset;
     public $_Snapshot;
     public $_Timestamp;
+    
+    public function __construct() {
+        
+        $this->_Timestamp = time();
+    }
 }
 
 class cSnapshots {
@@ -86,11 +91,28 @@ class cSnapshots {
         unset( $time );
     }
     
-    private function &findFilesytem( $pFs ) {
+    /*
+     * Find a filesystem, by its ID
+     */
+    private function &findFilesytemByID( $pFs ) {
         
         foreach( $this->_Filesystems as $fs ) {
-            
+
             if( (string) $fs->_ID === (string) $pFs)
+                return $fs;
+        }
+
+        return false;
+    }
+    
+    /*
+     * Find a filesystem, by its Name
+     */
+    private function &findFilesytemByName( $pName ) {
+        
+        foreach( $this->_Filesystems as $fs ) {
+
+            if( (string) $fs->_Name === (string) $pName)
                 return $fs;
         }
 
@@ -102,31 +124,13 @@ class cSnapshots {
 
         $time->_Name = $pTime->getName();
         
-        switch( $time->_Name  ) {
-            case "hour":
-                $zfsTag = SNAP_HOUR;
-                
-                break;
-                
-            case "day":
-                $zfsTag = SNAP_DAY;
-                break;
-                
-            case "week":
-                $zfsTag = SNAP_WEEK;
-                break;
-                
-            case "month":
-                $zfsTag = SNAP_MONTH;
-                break;
-                
-            case "year":
-                $zfsTag = SNAP_YEAR;
-                break;
-        }
-
-        $time->_ZfsTag = $zfsTag;
+        $zfsTag = 'SNAP_' . strtoupper( $time->_Name );
         
+        if( !defined( $zfsTag ))
+            return;
+            
+        $time->_ZfsTag = constant($zfsTag);
+
         // Time 
         if( isset( $pTime->attributes()->time ))
             $time->_Time = $pTime->attributes()->time;
@@ -138,13 +142,13 @@ class cSnapshots {
             $time->_Keep = $pTime->attributes()->keep;
         else
             $time->_Keep = $pDefaultKeep;
-        
+
         // Loop for Filesystem specified in this time
         foreach( $pTime as $fs ) {
 
             $name = $fs->getName();
 
-            if( ($FS = $this->findFilesytem( $name )) === false )
+            if( ($FS = $this->findFilesytemByID( $name )) === false )
                 continue;
                 
             $time->_Filesystems[ $name ] = $FS;
@@ -167,8 +171,11 @@ class cSnapshots {
             
             $fs->_ID = (string) $filesystem->attributes()->id;
             $fs->_Name = (string) $filesystem->attributes()->name;
-            $fs->_Recursive = (string) $filesystem->attributes()->recursive;
+            $fs->_Recursive = false;
             
+            if( strtolower((string)$filesystem->attributes()->recursive) === "yes" )
+                $fs->_Recursive = true;
+
             $this->_Filesystems[] = $fs;
         }
         
@@ -181,6 +188,44 @@ class cSnapshots {
            
             $this->timeLoad( $node, $time, $keep );
         }
+    }
+    
+    private function snapHourly( $pLatest ) {
+        
+    }
+    
+    private function snapMake( $pFs, $pLatest, $pTimeDiff, $pFormat ) {
+        
+        if ( time() >= strtotime( $pTimeDiff, $pLatest->_Timestamp)) {
+            $snapshot = new cZfsSnapshot();
+            
+            $snapshot->_Snapshot = strftime( $pFormat , time() );
+            $snapshot->_Dataset = $pLatest->_Dataset;
+
+            if( $snapshot->_Snapshot === $pLatest->_Snapshot )
+                return;
+                
+            $this->zfsSnapshotCreate( $snapshot, $pFs->_Recursive );
+        }
+    }
+    
+    private function snapHour( $pFs, $pLatest ) {
+        $this->snapMake( $pFs, $pLatest, "+1 hour", SNAP_HOUR);
+    }
+    private function snapDay( $pFs, $pLatest ) {
+        $this->snapMake( $pFs, $pLatest, "+1 day", SNAP_DAY);
+    }
+    
+    private function snapWeek( $pFs, $pLatest ) {
+        $this->snapMake( $pFs, $pLatest, "+1 week", SNAP_WEEK );
+    }
+    
+    private function snapMonth( $pFs, $pLatest ) {
+        $this->snapMake( $pFs, $pLatest, "+1 month", SNAP_MONTH );
+    }
+    
+    private function snapYear( $pFs, $pLatest ) {
+        $this->snapMake( $pFs, $pLatest, "+1 year", SNAP_YEAR);
     }
 
     private function snapshotSort($a, $b) {
@@ -197,24 +242,28 @@ class cSnapshots {
         foreach( $this->_Times as $time ) {
 
             // Loop each filesystem 
-            foreach( $time->_Snapshots as $fsDataset => $fs ) {
+            foreach( $time->_Snapshots as $fsDataset => $snapshots ) {
             
                 // has time elapsed since latest snapshot?
-                $fsCount = count( $fs );
-                
+                $fsCount = count( $snapshots );
+
                 // Number of snapshots exceeds limit for this time frame?
-                //if( $fsCount > $time->_Keep ) {
+                if( $fsCount <= $time->_Keep ) {
 
                     // Sort by timestamp
-                    uasort( $fs, array($this, 'snapshotSort'));
+                    uasort( $snapshots, array($this, 'snapshotSort'));
                     
-                    $latest = $fs[ $fsCount - 1];
+                    $latest = $snapshots[ $fsCount - 1];
+
+                    $fs = $this->findFilesytemByName( $latest->_Dataset );
                     
+                    // Timespan Function
+                    $func = 'snap' . ucfirst( $time->_Name );
                     
                     // if timestamp is older than now - (timeframe)
-                    $latest->_Timestamp;
+                    call_user_func(array( $this, $func ), $fs, $latest );
 
-                //}
+                }
             }
         }
         
@@ -226,28 +275,35 @@ class cSnapshots {
         foreach( $this->_Times as $time ) {
 
             // Loop each filesystem 
-            foreach( $time->_Snapshots as $fsDataset => $fs ) {
+            foreach( $time->_Snapshots as $fsDataset => $snapshots ) {
 
-                $fsCount = count( $fs );
+                $fs = $this->findFilesytemByName( $fsDataset );
+                
+                $fsCount = count( $snapshots );
                 
                 // Number of snapshots exceeds limit for this time frame?
                 if( $fsCount > $time->_Keep ) {
                     
                     // Sort by timestamp
-                    uasort( $fs, array($this, 'snapshotSort'));
+                    uasort( $snapshots, array($this, 'snapshotSort'));
 
                     $remove = $fsCount - $time->_Keep;
                 
                     // Get the snapshots that should be removed
-                    $removeSnaps = array_slice( $fs, 0, $remove );
-
+                    $removeSnaps = array_slice( $snapshots, 0, $remove );
+                    
+                    $snapshots = array_slice( $snapshots, $remove);
+                    
                     //
                     foreach( $removeSnaps as $snapshot ) {
-                        
-                        $this->zfsSnapshotRemove( $snapshot );
+
+                        $this->zfsSnapshotRemove( $snapshot, $fs->_Recursive );
                     }
                 }
+                
+                $time->_Snapshots[ $fsDataset ] = $snapshots;
             }
+
         }
     }
 
@@ -312,15 +368,22 @@ class cSnapshots {
                 
         if( $pRecursive === true )
             $Flags .= '-r ';
-           
-        echo "zfs snapshot $Flags {$pSnapshot->_Dataset}@{$pSnapshot->_Snapshot}\n";
-        
-    }
-    
-    private function zfsSnapshotRemove( $pSnapshot ) {
         
         if( DEBUG === true )
-            echo "zfs destroy {$pSnapshot->_Dataset}@{$pSnapshot->_Snapshot}\n";
+            echo "zfs snapshot $Flags{$pSnapshot->_Dataset}@{$pSnapshot->_Snapshot}\n";
+        else 
+            //$this->zfsExecute( ZFS_SNAP_ADD, "$Flags {$pSnapshot->_Dataset}@{$pSnapshot->_Snapshot}" );
+            ;
+    }
+    
+    private function zfsSnapshotRemove( $pSnapshot, $pRecursive ) {
+        $Flags = '';
+                
+        if( $pRecursive === true )
+            $Flags .= '-r ';
+            
+        if( DEBUG === true )
+            echo "zfs destroy $Flags{$pSnapshot->_Dataset}@{$pSnapshot->_Snapshot}\n";
         else 
             //$this->zfsExecute( ZFS_SNAP_REM, "{$pSnapshot->_Dataset}@{$pSnapshot->_Snapshot}" );
             ;

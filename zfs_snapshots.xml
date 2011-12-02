@@ -1,6 +1,12 @@
 <?xml version='1.0' standalone='yes'?>
 
 <zfs>
+	<zpools>
+		<syko>
+			<scrub format="%H:%M %d" time="02:30 01"/>
+		</syko>
+	</zpools>
+
 	<fs>
 		<fs id="storage" name="syko/storage" recursive="yes"/>
 		<fs id="home"    name="syko/home"    recursive="yes"/>

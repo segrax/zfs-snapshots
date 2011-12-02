@@ -3,6 +3,9 @@
 
 define('ZFS_SNAP_CONF', 'zfs_snapshots.xml');
 define('ZFS_BINARY',    '/sbin/zfs');
+define('ZPOOL_BINARY',  '/sbin/zpool');
+
+define('ZPOOL_SCRUB',   	'scrub');
 
 define('ZFS_SNAP_ADD',  'snapshot');
 define('ZFS_SNAP_REM',  'destroy');
@@ -37,6 +40,7 @@ function main($argc, array $argv) {
     
     $snaps->zfsSnapshotRemoveOld();
     $snaps->zfsSnapshotCreateNew();
+    $snaps->poolProcess();
 }
 
 class cFilesystem {
@@ -45,6 +49,13 @@ class cFilesystem {
     public $_Recursive;
 }
 
+class cPool {
+    public $_Name;    
+    public $_TimeFormat;
+    public $_Time;
+    
+}
+        
 class cTime {
     public $_Name;
     public $_ZfsTag;
@@ -74,6 +85,8 @@ class cSnapshots {
     private $_Times = array();
     private $_ZfsOutput = array();
     private $_ZfsSnapshots = array();
+    private $_Zpools = array();
+    private $_ZpoolOutput = array();
     
     public function __construct( $pConfig ) {
 
@@ -179,6 +192,19 @@ class cSnapshots {
             $this->_Filesystems[] = $fs;
         }
         
+        foreach( $config->zpools->children() as $pool ) {
+            
+            $Pool = new cPool();
+            $Pool->_Name = $pool->getName();
+            //<scrub format="%H-%M %d" time="02:00 01"
+            
+            $Pool->_TimeFormat = (string) $pool->scrub->attributes()->format;
+            
+            $Pool->_Time = strptime( (string) $pool->scrub->attributes()->time, $Pool->_TimeFormat );
+
+            $this->_Zpools[] = $Pool;
+        }
+        
         // Default Time/Keep settings
         $time = $config->time->attributes()->time;
         $keep = $config->time->attributes()->keep;
@@ -190,19 +216,30 @@ class cSnapshots {
         }
     }
     
-    private function snapHourly( $pLatest ) {
+    public function poolProcess() {
         
+        foreach( $this->_Zpools as $pool ) {
+            
+            $date = strftime( $pool->_TimeFormat, time() );
+            $now = strptime( $date, $pool->_TimeFormat );
+
+            if( $pool->_Time === $now ) {
+                
+                if( $this->zfsScrubStatus( $pool ) === false )
+                    $this->zfsScrubStart( $pool );
+            }
+        }
     }
     
     private function snapMake( $pFs, $pLatest, $pTimeDiff, $pFormat ) {
         
-        if ( time() >= strtotime( $pTimeDiff, $pLatest->_Timestamp)) {
+        if ( ($pLatest === null) || (time() >= strtotime( $pTimeDiff, $pLatest->_Timestamp))) {
             $snapshot = new cZfsSnapshot();
             
             $snapshot->_Snapshot = strftime( $pFormat , time() );
-            $snapshot->_Dataset = $pLatest->_Dataset;
+            $snapshot->_Dataset = $pFs->_Name;
 
-            if( $snapshot->_Snapshot === $pLatest->_Snapshot )
+            if( !($pLatest === null) && $snapshot->_Snapshot === $pLatest->_Snapshot )
                 return;
                 
             $this->zfsSnapshotCreate( $snapshot, $pFs->_Recursive );
@@ -212,6 +249,7 @@ class cSnapshots {
     private function snapHour( $pFs, $pLatest ) {
         $this->snapMake( $pFs, $pLatest, "+1 hour", SNAP_HOUR);
     }
+    
     private function snapDay( $pFs, $pLatest ) {
         $this->snapMake( $pFs, $pLatest, "+1 day", SNAP_DAY);
     }
@@ -240,29 +278,41 @@ class cSnapshots {
 
         // Loop each time frame
         foreach( $this->_Times as $time ) {
-
-            // Loop each filesystem 
-            foreach( $time->_Snapshots as $fsDataset => $snapshots ) {
-            
-                // has time elapsed since latest snapshot?
-                $fsCount = count( $snapshots );
-
-                // Number of snapshots exceeds limit for this time frame?
-                if( $fsCount <= $time->_Keep ) {
-
-                    // Sort by timestamp
-                    uasort( $snapshots, array($this, 'snapshotSort'));
+            // Timespan Function
+            $func = 'snap' . ucfirst( $time->_Name );
+                        
+            // No snapshots at all? 
+            if( count( $time->_Snapshots ) === 0 ) {
+                
+                foreach( $time->_Filesystems as $fs ) {
                     
-                    $latest = $snapshots[ $fsCount - 1];
+                    $fs = $this->findFilesytemByName( $fs->_Name );
 
-                    $fs = $this->findFilesytemByName( $latest->_Dataset );
-                    
-                    // Timespan Function
-                    $func = 'snap' . ucfirst( $time->_Name );
-                    
                     // if timestamp is older than now - (timeframe)
-                    call_user_func(array( $this, $func ), $fs, $latest );
+                    call_user_func(array( $this, $func ), $fs, null );
+                }
+                
+                
+            } else {
+                // Loop each filesystem 
+                foreach( $time->_Snapshots as $fsDataset => $snapshots ) {
+                
+                    // has time elapsed since latest snapshot?
+                    $fsCount = count( $snapshots );
+    
+                    // Number of snapshots exceeds limit for this time frame?
+                    if( $fsCount <= $time->_Keep ) {
+    
+                        // Sort by timestamp
+                        uasort( $snapshots, array($this, 'snapshotSort'));
+                        
+                        $latest = $snapshots[ $fsCount - 1];
+    
+                        $fs = $this->findFilesytemByName( $latest->_Dataset );
 
+                        // if timestamp is older than now - (timeframe)
+                        call_user_func(array( $this, $func ), $fs, $latest );
+                    }
                 }
             }
         }
@@ -326,6 +376,83 @@ class cSnapshots {
         exec( implode(' ', $args), $this->_ZfsOutput, $errorcode);
        
         return $errorcode;
+    }
+    
+    private function zPoolExecute( $pZpoolAction, $pOptions = array() ) {
+        $this->_ZpoolOutput = array();
+       
+        if( !is_array( $pOptions ) )
+            $pOptions = array($pOptions);
+        
+        $options = implode( ' ', $pOptions );
+         
+        $args = array(	ZPOOL_BINARY,
+                        $pZpoolAction, 
+                        $options,
+                        '2>&1'
+                        );
+        $errorcode = 0;
+
+        exec( implode(' ', $args), $this->_ZpoolOutput, $errorcode);
+       
+        return $errorcode;
+    }
+    
+    private function zfsScrubStart( $pPool ) {
+        
+        if( DEBUG === true )
+            echo "zpool scrub {$pPool->_Name}\n";
+        else
+            ;//$this->zPoolExecute( ZPOOL_SCRUB, $pPool );
+    }
+    
+    private function zfsScrubStatus( $pPool ) {
+        
+        //if( DEBUG === true )
+        echo "zpool status {$pPool->_Name}\n";
+        //else
+        $this->zPoolExecute( ZPOOL_STATUS, $pPool->_Name );
+        
+        $out = '';
+        
+        while( strpos($out,' scan: scrub in progress since ') === false ) {
+            
+            if( count( $this->_ZpoolOutput ) === 0 )
+                return false;
+                
+            $out = array_shift( $this->_ZpoolOutput );
+        }
+
+        return true;
+        /*
+         * 
+         *    pool: vader
+             state: ONLINE
+             scan: scrub in progress since Thu Dec  1 23:05:58 2011
+                4.36M scanned out of 3.01T at 744K/s, (scan is slow, no estimated time)
+                0 repaired, 0.00% done
+
+
+         *    pool: syko
+             state: ONLINE
+            status: The pool is formatted using an older on-disk format.  The pool can
+                    still be used, but some features are unavailable.
+            action: Upgrade the pool using 'zpool upgrade'.  Once this is done, the
+                    pool will no longer be accessible on older software versions.
+             scan: scrub repaired 0 in 12h33m with 0 errors on Thu Dec  1 18:03:49 2011
+            config:
+            
+                    NAME           STATE     READ WRITE CKSUM
+                    syko           ONLINE       0     0     0
+                      raidz1-0     ONLINE       0     0     0
+                        gpt/disk0  ONLINE       0     0     0
+                        gpt/disk1  ONLINE       0     0     0
+                        gpt/disk2  ONLINE       0     0     0
+                        gpt/disk3  ONLINE       0     0     0
+            
+            errors: No known data errors
+
+         */
     }
     
     private function zfsSnapshotLoad() {

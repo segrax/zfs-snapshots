@@ -13,7 +13,7 @@
 		<fs id="jails"   name="syko/jails"   recursive="yes"/>
 	</fs>
 
-	<time time="21:04" format="%H:%M" keep="1">
+	<time time="03:00" format="%H:%M" keep="1">
 
 		<hour keep="3">
 			<home/>

@@ -1,6 +1,8 @@
 #!/usr/local/bin/php
 <?php
 
+date_default_timezone_set('Australia/Melbourne');
+
 define('ZFS_SNAP_CONF', 'zfs_snapshots.xml');
 define('ZFS_BINARY',    '/sbin/zfs');
 define('ZPOOL_BINARY',  '/sbin/zpool');
@@ -24,7 +26,6 @@ define('DEBUG', true);
 define('ZFS_SNAP_REVISION', 	 '$Revision$');
 define('ZFS_SNAP_REVISION_DATE', '$Date$');
 
-date_default_timezone_set('Australia/Melbourne');
 
 main($argc, $argv);
 
@@ -187,8 +188,8 @@ class cSnapshots {
             
             $fs = new cFilesystem();
             
-            $fs->_ID = (string) $filesystem->attributes()->id;
-            $fs->_Name = (string) $filesystem->attributes()->name;
+            $fs->_ID = trim( (string) $filesystem->attributes()->id );
+            $fs->_Name = trim( (string) $filesystem->attributes()->name );
             $fs->_Recursive = false;
             
             if( strtolower((string)$filesystem->attributes()->recursive) === 'yes' )

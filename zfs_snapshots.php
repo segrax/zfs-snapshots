@@ -477,10 +477,12 @@ class cSnapshots {
      */
     private function zfsScrubStart( $pPool ) {
         
+        echo "zpool scrub {$pPool->_Name}\n";
+        
         if( DEBUG === true )
-            echo "zpool scrub {$pPool->_Name}\n";
-        else
-            $this->zPoolExecute( ZPOOL_SCRUB, $pPool );
+            return;
+            
+        $this->zPoolExecute( ZPOOL_SCRUB, $pPool );
     }
     
     /**
@@ -591,11 +593,12 @@ class cSnapshots {
                 
         if( $pRecursive === true )
             $Flags .= '-r ';
+
+        echo "zfs snapshot $Flags{$pSnapshot->_Dataset}@{$pSnapshot->_Snapshot}\n";
         
         if( DEBUG === true )
-            echo "zfs snapshot $Flags{$pSnapshot->_Dataset}@{$pSnapshot->_Snapshot}\n";
-        else 
-            $this->zfsExecute( ZFS_SNAP_ADD, "$Flags {$pSnapshot->_Dataset}@{$pSnapshot->_Snapshot}" );
+            return;
+        $this->zfsExecute( ZFS_SNAP_ADD, "$Flags {$pSnapshot->_Dataset}@{$pSnapshot->_Snapshot}" );
     }
     
     /**
@@ -612,10 +615,11 @@ class cSnapshots {
         if( $pRecursive === true )
             $Flags .= '-r ';
             
+        echo "zfs destroy $Flags{$pSnapshot->_Dataset}@{$pSnapshot->_Snapshot}\n";
+        
         if( DEBUG === true )
-            echo "zfs destroy $Flags{$pSnapshot->_Dataset}@{$pSnapshot->_Snapshot}\n";
-        else 
-            $this->zfsExecute( ZFS_SNAP_REM, "{$pSnapshot->_Dataset}@{$pSnapshot->_Snapshot}" );
+            return;
+        $this->zfsExecute( ZFS_SNAP_REM, "{$pSnapshot->_Dataset}@{$pSnapshot->_Snapshot}" );
     }
     
     /**

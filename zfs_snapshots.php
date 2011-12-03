@@ -385,7 +385,7 @@ class cSnapshots {
                 $fs = $this->findFilesytemByName( $fsDataset );
                 
                 $fsCount = count( $snapshots );
-                
+                echo "$fsCount\n";
                 // Number of snapshots exceeds limit for this time frame?
                 if( $fsCount > $time->_Keep ) {
                     

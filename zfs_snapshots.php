@@ -314,7 +314,7 @@ class cSnapshots {
      * 
      * @return int -1 if the '$pA' timestamp is less than the '$pB' timestamp
      */
-    private function snapshotSort($pA, $pB) {
+    private function snapSort($pA, $pB) {
         
         if ($pA->_Timestamp == $pB->_Timestamp)
             return 0;
@@ -337,9 +337,6 @@ class cSnapshots {
             $now = strptime( $date, $time->_TimeFormat );
             
             if ($time->_Time === $now ) {
-                
-                 // Timespan Function
-                $func = 'snap' . ucfirst( $time->_Name );
 
                 // loop the filesystems and find any that doesnt yet have a snapshot
                 foreach( $time->_Filesystems as $fs ) {
@@ -359,7 +356,7 @@ class cSnapshots {
                         if( $snapCount <= $time->_Keep ) {
 
                             // Sort by timestamp
-                            uasort( $timeSnaps, array($this, 'snapshotSort'));
+                            uasort( $timeSnaps, array($this, 'snapSort'));
                             
                             $latest = $timeSnaps[ $snapCount - 1];
                             

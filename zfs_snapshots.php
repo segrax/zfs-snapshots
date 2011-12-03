@@ -12,13 +12,13 @@
  */
 
 // Dont actually execute commands
-define('DEBUG', true);
+//define('DEBUG', true);
 
 // Default Timezone
 date_default_timezone_set('Australia/Melbourne');
 
 // Default Config
-define('ZFS_SNAP_CONF', 'zfs_snapshots.xml');
+define('ZFS_SNAP_CONF', dirname(SCRIPT_FILENAME) . '/zfs_snapshots.xml');
 
 // Binarys
 define('ZFS_BINARY',    '/sbin/zfs');

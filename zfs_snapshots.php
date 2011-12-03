@@ -382,8 +382,6 @@ class cSnapshots {
             // Loop each filesystem 
             foreach( $time->_Snapshots as $fsDataset => $snapshots ) {
 
-                $fs = $this->findFilesytemByName( $fsDataset );
-                
                 $fsCount = count( $snapshots );
                 
                 // Number of snapshots exceeds limit for this time frame?
@@ -398,6 +396,8 @@ class cSnapshots {
                     $removeSnaps = array_slice( $snapshots, 0, $remove );
                     
                     $snapshots = array_slice( $snapshots, $remove);
+                    
+                    $fs = $this->findFilesytemByName( $fsDataset );
                     
                     //
                     foreach( $removeSnaps as $snapshot ) {

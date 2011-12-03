@@ -385,7 +385,7 @@ class cSnapshots {
                 $fs = $this->findFilesytemByName( $fsDataset );
                 
                 $fsCount = count( $snapshots );
-                echo "$fsCount\n";
+                
                 // Number of snapshots exceeds limit for this time frame?
                 if( $fsCount > $time->_Keep ) {
                     
@@ -574,7 +574,8 @@ class cSnapshots {
 
             // 
             $fs = $this->findFilesytemByName( $snapshot->_Dataset );
-            $fs->_ZfsSnapshots[] = $snapshot;
+            if( $fs !== false )
+                $fs->_ZfsSnapshots[] = $snapshot;
         }
 
         return true;

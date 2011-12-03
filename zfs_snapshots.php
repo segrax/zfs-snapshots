@@ -8,7 +8,7 @@
  * 
  * @author Robert Crossfield <robcrossfield@gmail.com>
  * 
- * @copyright 2011 Strobs Canardly Systems
+ * @copyright Strobs Canardly Systems 2011
  */
 
 date_default_timezone_set('Australia/Melbourne');

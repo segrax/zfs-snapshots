@@ -2,18 +2,18 @@
 
 <zfs>
 	<zpools>
-		<syko>
+		<sykoDev>
 			<scrub format="%H:%M %d" time="02:40 01"/>
-		</syko>
+		</sykoDev>
 	</zpools>
 
 	<fs>
-		<fs id="storage" name="syko/storage" recursive="yes"/>
-		<fs id="home"    name="syko/home"    recursive="yes"/>
-		<fs id="jails"   name="syko/jails"   recursive="yes"/>
+		<fs id="storage" name="sykoDev/storage" recursive="yes"/>
+		<fs id="home"    name="sykoDev/home"    recursive="yes"/>
+		<fs id="jails"   name="sykoDev/jails"   recursive="yes"/>
 	</fs>
 
-	<time time="08:41" format="%H:%M" keep="1">
+	<time time="02:00" format="%H:%M" keep="1">
 
 		<hour keep="3" diff="+1 hour" time="00" format="%M" snapshot="hourly-%Y-%m-%d_%H_%M_%S">
 			<home/>

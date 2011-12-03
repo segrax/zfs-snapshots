@@ -18,7 +18,7 @@
 date_default_timezone_set('Australia/Melbourne');
 
 // Default Config
-define('ZFS_SNAP_CONF', dirname(SCRIPT_FILENAME) . '/zfs_snapshots.xml');
+define('ZFS_SNAP_CONF', dirname(__FILE__) . '/zfs_snapshots.xml');
 
 // Binarys
 define('ZFS_BINARY',    '/sbin/zfs');

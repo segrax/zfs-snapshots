@@ -293,7 +293,7 @@ class cSnapshots {
      * 
      * @return void
      */
-    private function snapMake( $pFs, $pLatest, $pTime ) {
+    private function snapshotMake( $pFs, $pLatest, $pTime ) {
 
         if ( ($pLatest === null) || (time() >= strtotime( $pTime->_TimeDifference, $pLatest->_Timestamp))) {
 
@@ -314,7 +314,7 @@ class cSnapshots {
      * 
      * @return int -1 if the '$pA' timestamp is less than the '$pB' timestamp
      */
-    private function snapSort($pA, $pB) {
+    private function snapshotSort($pA, $pB) {
         
         if ($pA->_Timestamp == $pB->_Timestamp)
             return 0;
@@ -348,7 +348,7 @@ class cSnapshots {
                     // No snapshots for this fs at all?
                     if( $snapCount === 0) {
 
-                        $this->snapMake( $fs, null, $time);
+                        $this->snapshotSort( $fs, null, $time);
                     
                     } else {
 
@@ -356,11 +356,11 @@ class cSnapshots {
                         if( $snapCount <= $time->_Keep ) {
 
                             // Sort by timestamp
-                            uasort( $timeSnaps, array($this, 'snapSort'));
+                            uasort( $timeSnaps, array($this, 'snapshotSort'));
                             
                             $latest = $timeSnaps[ $snapCount - 1];
                             
-                            $this->snapMake( $fs, $latest, $time);
+                            $this->snapshotSort( $fs, $latest, $time);
                         }
                     }
                 }    //foreach filesystem

@@ -11,8 +11,13 @@
  * @copyright Strobs Canardly Systems 2011
  */
 
+// Dont actually execute commands
+define('DEBUG', true);
+
+// Default Timezone
 date_default_timezone_set('Australia/Melbourne');
 
+// Default Config
 define('ZFS_SNAP_CONF', 'zfs_snapshots.xml');
 
 // Binarys
@@ -34,43 +39,34 @@ define('ZFS_SNAP_OUT', 	'NAME                                     USED  AVAIL  R
 define('ZFS_SNAP_REVISION', 	 '$Revision$');
 define('ZFS_SNAP_REVISION_DATE', '$Date$');
 
-// Dont actually execute commands?
-define('DEBUG', true);
-
-
+// Start up...
 main($argc, $argv);
 
-function main($argc, array $argv) { 
-
-    $rev = substr( ZFS_SNAP_REVISION, 11, -2 );
-    $rev .= ' @ ' . substr( ZFS_SNAP_REVISION_DATE, 7, 19 );
-    
-    $snapver = "zfs-snapshots (svn revision: $rev)\n\n";
-    echo $snapver;
-    
-    $snaps = new cSnapshots( ZFS_SNAP_CONF);
-    
-    $snaps->zfsSnapshotRemoveOld();
-    $snaps->zfsSnapshotCreateNew();
-    $snaps->poolProcess();
-}
-
+/**
+ * Representation of a 'filesystem', a Zfs dataset node
+ * 
+ * Holds snapshots for this node
+ */
 class cFilesystem {
     public $_ID;
     public $_Name;
     public $_Recursive;
     
     public $_ZfsSnapshots = array();
-    
 }
 
+/**
+ * Representation of a zpool
+ */
 class cPool {
     public $_Name;    
     public $_TimeFormat;
     public $_Time;
-    
 }
-        
+
+/**
+ * Representation of a time frame
+ */
 class cTime {
     public $_Name;
     public $_Time;        // Time of execution
@@ -83,6 +79,9 @@ class cTime {
     public $_Snapshots = array();
 }
 
+/**
+ * Representation of a Zfs Snapshot
+ */
 class cZfsSnapshot {
     public $_Dataset;
     public $_Snapshot;
@@ -94,6 +93,9 @@ class cZfsSnapshot {
     }
 }
 
+/**
+ * The Zfs-Snapshots Controller
+ */
 class cSnapshots {
     private $_Filesystems = array();
     private $_Times = array();
@@ -661,3 +663,20 @@ class cSnapshots {
     }
 }
 
+/**
+ * CLI Entry point
+ */
+function main($argc, array $argv) { 
+
+    $rev = substr( ZFS_SNAP_REVISION, 11, -2 );
+    $rev .= ' @ ' . substr( ZFS_SNAP_REVISION_DATE, 7, 19 );
+    
+    $snapver = "zfs-snapshots (svn revision: $rev)\n\n";
+    echo $snapver;
+    
+    $snaps = new cSnapshots( ZFS_SNAP_CONF);
+    
+    $snaps->zfsSnapshotRemoveOld();
+    $snaps->zfsSnapshotCreateNew();
+    $snaps->poolProcess();
+}

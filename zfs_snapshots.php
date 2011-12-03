@@ -12,7 +12,7 @@
  */
 
 // Dont actually execute commands
-//define('DEBUG', true);
+define('DEBUG', true);
 
 // Default Timezone
 date_default_timezone_set('Australia/Melbourne');
@@ -388,7 +388,7 @@ class cSnapshots {
                 if( $fsCount > $time->_Keep ) {
                     
                     // Sort by timestamp
-                    uasort( $snapshots, array($this, 'snapSort'));
+                    uasort( $snapshots, array($this, 'snapshotSort'));
 
                     $remove = $fsCount - $time->_Keep;
                 

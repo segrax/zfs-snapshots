@@ -390,7 +390,7 @@ class cSnapshots {
                 if( $fsCount > $time->_Keep ) {
                     
                     // Sort by timestamp
-                    uasort( $snapshots, array($this, 'snapshotSort'));
+                    uasort( $snapshots, array($this, 'snapSort'));
 
                     $remove = $fsCount - $time->_Keep;
                 

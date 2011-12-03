@@ -48,6 +48,9 @@ class cFilesystem {
     public $_ID;
     public $_Name;
     public $_Recursive;
+    
+    public $_ZfsSnapshots = array();
+    
 }
 
 class cPool {
@@ -83,7 +86,6 @@ class cSnapshots {
     private $_Filesystems = array();
     private $_Times = array();
     private $_ZfsOutput = array();
-    private $_ZfsSnapshots = array();
     private $_Zpools = array();
     private $_ZpoolOutput = array();
     
@@ -241,7 +243,7 @@ class cSnapshots {
     private function snapMake( $pFs, $pLatest, $pTimeDiff, $pFormat ) {
         
         if ( ($pLatest === null) || (time() >= strtotime( $pTimeDiff, $pLatest->_Timestamp))) {
-            
+
             $snapshot = new cZfsSnapshot();
             
             $snapshot->_Snapshot = strftime( $pFormat , time() );
@@ -249,29 +251,29 @@ class cSnapshots {
 
             if( !($pLatest === null) && $snapshot->_Snapshot === $pLatest->_Snapshot )
                 return;
-                
+
             $this->zfsSnapshotCreate( $snapshot, $pFs->_Recursive );
         }
     }
     
     private function snapHour( $pFs, $pLatest ) {
-        $this->snapMake( $pFs, $pLatest, "+1 hour", SNAP_HOUR);
+        $this->snapMake( $pFs, $pLatest, '+1 hour', SNAP_HOUR);
     }
     
     private function snapDay( $pFs, $pLatest ) {
-        $this->snapMake( $pFs, $pLatest, "+1 day", SNAP_DAY);
+        $this->snapMake( $pFs, $pLatest, '+1 day', SNAP_DAY);
     }
     
     private function snapWeek( $pFs, $pLatest ) {
-        $this->snapMake( $pFs, $pLatest, "+1 week", SNAP_WEEK );
+        $this->snapMake( $pFs, $pLatest, '+1 week', SNAP_WEEK );
     }
     
     private function snapMonth( $pFs, $pLatest ) {
-        $this->snapMake( $pFs, $pLatest, "+1 month", SNAP_MONTH );
+        $this->snapMake( $pFs, $pLatest, '+1 month', SNAP_MONTH );
     }
     
     private function snapYear( $pFs, $pLatest ) {
-        $this->snapMake( $pFs, $pLatest, "+1 year", SNAP_YEAR);
+        $this->snapMake( $pFs, $pLatest, '+1 year', SNAP_YEAR);
     }
 
     private function snapshotSort($a, $b) {
@@ -292,38 +294,33 @@ class cSnapshots {
             
             if ($time->_Time === $now ) {
                 
-                // Timespan Function
+                 // Timespan Function
                 $func = 'snap' . ucfirst( $time->_Name );
-                            
-                // No snapshots at all? 
-                if( count( $time->_Snapshots ) === 0 ) {
+
+                // loop the filesystems and find any that doesnt yet have a snapshot
+                foreach( $time->_Filesystems as $fs ) {
                     
-                    foreach( $time->_Filesystems as $fs ) {
-                        
+                    $timeSnaps = $time->_Snapshots[ $fs->_Name ];
+                    
+                    $snapCount = count( $timeSnaps );
+                    
+                    // No snapshots for this fs at all?
+                    if( count($timeSnaps) === 0) {
                         $fs = $this->findFilesytemByName( $fs->_Name );
     
                         // if timestamp is older than now - (timeframe)
                         call_user_func(array( $this, $func ), $fs, null );
-                    }
                     
-                    
-                } else {
-                    // Loop each filesystem 
-                    foreach( $time->_Snapshots as $fsDataset => $snapshots ) {
-                    
-                        // has time elapsed since latest snapshot?
-                        $fsCount = count( $snapshots );
-        
+                    } else {
+
                         // Number of snapshots exceeds limit for this time frame?
-                        if( $fsCount <= $time->_Keep ) {
-        
+                        if( $snapCount <= $time->_Keep ) {
+
                             // Sort by timestamp
-                            uasort( $snapshots, array($this, 'snapshotSort'));
+                            uasort( $timeSnaps, array($this, 'snapshotSort'));
                             
-                            $latest = $snapshots[ $fsCount - 1];
-        
-                            $fs = $this->findFilesytemByName( $latest->_Dataset );
-    
+                            $latest = $timeSnaps[ $snapCount - 1];
+
                             // if timestamp is older than now - (timeframe)
                             call_user_func(array( $this, $func ), $fs, $latest );
                         }
@@ -331,7 +328,6 @@ class cSnapshots {
                 }
             }
         }
-        
     }
     
     public function zfsSnapshotRemoveOld() {
@@ -471,8 +467,6 @@ class cSnapshots {
     }
     
     private function zfsSnapshotLoad() {
-        $this->_ZfsSnapshots = array();
-        
         // Execute zfs
         $this->zfsExecute( ZFS_SNAP_LIST );
         
@@ -499,7 +493,8 @@ class cSnapshots {
             $snapshot->_Snapshot = substr( $output, $pos, $finish);
 
             // 
-            $this->_ZfsSnapshots[$snapshot->_Dataset][] = $snapshot;
+            $fs = $this->findFilesytemByName( $snapshot->_Dataset );
+            $fs->_ZfsSnapshots[] = $snapshot;
         }
 
         return true;
@@ -534,7 +529,7 @@ class cSnapshots {
     private function ZfsSnapshotProcessTime( $pFilesystem, &$pTime ) {
         //$pTime->_Snapshots[ $pFilesystem->_Name ] = array();
 
-        foreach( $this->_ZfsSnapshots[ $pFilesystem->_Name ] as $snap ) {
+        foreach( $pFilesystem->_ZfsSnapshots as &$snap ) {
             
             $date = array();
             
@@ -560,6 +555,8 @@ class cSnapshots {
                                      
             $pTime->_Snapshots[ $pFilesystem->_Name][] = $snap;
         }
+        
+        unset($snap);
     }
 }
 

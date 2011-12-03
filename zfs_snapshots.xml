@@ -3,7 +3,7 @@
 <zfs>
 	<zpools>
 		<syko>
-			<scrub format="%H:%M %d" time="02:30 01"/>
+			<scrub format="%H:%M %d" time="02:40 01"/>
 		</syko>
 	</zpools>
 
@@ -13,25 +13,25 @@
 		<fs id="jails"   name="syko/jails"   recursive="yes"/>
 	</fs>
 
-	<time time="03:00" format="%H:%M" keep="1">
+	<time time="15:18" format="%H:%M" keep="1">
 
-		<hour keep="3">
+		<hour time="00" format="%M" keep="3">
 			<home/>
 		</hour>
 
-		<day keep="2">
+		<day keep="9">
 			<storage/>
 			<home/>
 			<jails/>
 		</day>
 		
-		<week keep="2">
+		<week keep="5">
 			<storage/>
 			<home/>
 			<jails/>
 		</week>
 
-		<month keep="2">
+		<month keep="10">
 			<storage/>
 			<home/>
 			<jails/>

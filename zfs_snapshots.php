@@ -33,7 +33,7 @@ define('ZFS_SNAP_REM',  'destroy');
 define('ZFS_SNAP_LIST', 'list -t snapshot');
 
 // Zfs snapshot list output first row
-define('ZFS_SNAP_OUT', 	'NAME                                     USED  AVAIL  REFER  MOUNTPOINT');
+define('ZFS_SNAP_OUT', 	'USED  AVAIL  REFER  MOUNTPOINT');
 
 // SVN Details
 define('ZFS_SNAP_REVISION', 	 '$Revision$');
@@ -494,9 +494,9 @@ class cSnapshots {
      */
     private function zfsScrubStatus( $pPool ) {
         
-        //if( DEBUG === true )
+
         echo "zpool status {$pPool->_Name}\n";
-        //else
+
         $this->zPoolExecute( ZPOOL_STATUS, $pPool->_Name );
         
         $out = '';
@@ -549,9 +549,9 @@ class cSnapshots {
     private function zfsSnapshotLoad() {
         // Execute zfs
         $this->zfsExecute( ZFS_SNAP_LIST );
-        
+
         // Remove header
-        if( array_shift($this->_ZfsOutput) !== ZFS_SNAP_OUT )
+        if( strpos( array_shift($this->_ZfsOutput), ZFS_SNAP_OUT ) === false )
             return false;
         
         // 

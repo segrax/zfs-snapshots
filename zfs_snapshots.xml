@@ -15,7 +15,7 @@
 
 	<time time="02:00" format="%H:%M" keep="1">
 
-		<hour keep="3" diff="+1 hour" time="00" format="%M" snapshot="hourly-%Y-%m-%d_%H_%M_%S">
+		<hour keep="3" diff="+1 hour" time="03" format="%M" snapshot="hourly-%Y-%m-%d_%H_%M">
 			<home/>
 		</hour>
 

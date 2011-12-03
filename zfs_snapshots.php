@@ -12,7 +12,7 @@
  */
 
 // Dont actually execute commands
-define('DEBUG', true);
+//define('DEBUG', true);
 
 // Default Timezone
 date_default_timezone_set('Australia/Melbourne');

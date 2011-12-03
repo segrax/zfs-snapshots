@@ -1,30 +1,41 @@
 #!/usr/local/bin/php
 <?php
 
+/**
+ * zfs_snapshots :  Take snapshots on a ZFS filesystem at regular intervals, 
+ * 					Delete old snapshots
+ * 					Regular pool scrub
+ * 
+ * @author Robert Crossfield <robcrossfield@gmail.com>
+ * 
+ * @copyright 2011 Strobs Canardly Systems
+ */
+
 date_default_timezone_set('Australia/Melbourne');
 
 define('ZFS_SNAP_CONF', 'zfs_snapshots.xml');
+
+// Binarys
 define('ZFS_BINARY',    '/sbin/zfs');
 define('ZPOOL_BINARY',  '/sbin/zpool');
 
-define('ZPOOL_SCRUB',   	'scrub');
+// Pool Commands
+define('ZPOOL_SCRUB',   'scrub');
 
+// ZFS commands
 define('ZFS_SNAP_ADD',  'snapshot');
 define('ZFS_SNAP_REM',  'destroy');
 define('ZFS_SNAP_LIST', 'list -t snapshot');
 
+// Zfs snapshot list output first row
 define('ZFS_SNAP_OUT', 	'NAME                                     USED  AVAIL  REFER  MOUNTPOINT');
 
-define('SNAP_HOUR', 	'hourly-%Y-%m-%d_%H_%M_%S');
-define('SNAP_DAY',  	'daily-%Y-%m-%d');
-define('SNAP_WEEK', 	'weekly-%Y-%W');
-define('SNAP_MONTH',	'monthly-%Y-%m');
-define('SNAP_YEAR', 	'yearly-%Y');
-
-define('DEBUG', true);
-
+// SVN Details
 define('ZFS_SNAP_REVISION', 	 '$Revision$');
 define('ZFS_SNAP_REVISION_DATE', '$Date$');
+
+// Dont actually execute commands?
+define('DEBUG', true);
 
 
 main($argc, $argv);
@@ -62,11 +73,12 @@ class cPool {
         
 class cTime {
     public $_Name;
-    public $_ZfsTag;
     public $_Time;        // Time of execution
     public $_Keep;        // Number of snapshots to keep
     public $_TimeFormat;
-   
+    public $_TimeDifference; 
+    public $_SnapshotFormat;
+    
     public $_Filesystems = array();
     public $_Snapshots = array();
 }
@@ -138,13 +150,6 @@ class cSnapshots {
 
         $time->_Name = $pTime->getName();
         
-        $zfsTag = 'SNAP_' . strtoupper( $time->_Name );
-        
-        if( !defined( $zfsTag ))
-            return;
-            
-        $time->_ZfsTag = constant($zfsTag);
-        
         if( isset( $pTime->attributes()->format ))
             $time->_TimeFormat = $pTime->attributes()->format;
         else
@@ -162,8 +167,10 @@ class cSnapshots {
         else
             $time->_Keep = $pDefaultKeep;
 
+        $time->_TimeDifference = (string) $pTime->attributes()->diff;
 
-            
+        $time->_SnapshotFormat = (string) $pTime->attributes()->snapshot;
+        
         // Loop for Filesystem specified in this time
         foreach( $pTime as $fs ) {
 
@@ -255,26 +262,6 @@ class cSnapshots {
             $this->zfsSnapshotCreate( $snapshot, $pFs->_Recursive );
         }
     }
-    
-    private function snapHour( $pFs, $pLatest ) {
-        $this->snapMake( $pFs, $pLatest, '+1 hour', SNAP_HOUR);
-    }
-    
-    private function snapDay( $pFs, $pLatest ) {
-        $this->snapMake( $pFs, $pLatest, '+1 day', SNAP_DAY);
-    }
-    
-    private function snapWeek( $pFs, $pLatest ) {
-        $this->snapMake( $pFs, $pLatest, '+1 week', SNAP_WEEK );
-    }
-    
-    private function snapMonth( $pFs, $pLatest ) {
-        $this->snapMake( $pFs, $pLatest, '+1 month', SNAP_MONTH );
-    }
-    
-    private function snapYear( $pFs, $pLatest ) {
-        $this->snapMake( $pFs, $pLatest, '+1 year', SNAP_YEAR);
-    }
 
     private function snapshotSort($a, $b) {
         
@@ -305,11 +292,9 @@ class cSnapshots {
                     $snapCount = count( $timeSnaps );
                     
                     // No snapshots for this fs at all?
-                    if( count($timeSnaps) === 0) {
-                        $fs = $this->findFilesytemByName( $fs->_Name );
-    
-                        // if timestamp is older than now - (timeframe)
-                        call_user_func(array( $this, $func ), $fs, null );
+                    if( $snapCount === 0) {
+
+                        $this->snapMake( $fs, null, $time->_TimeDifference, $time->_SnapshotFormat);
                     
                     } else {
 
@@ -320,9 +305,8 @@ class cSnapshots {
                             uasort( $timeSnaps, array($this, 'snapshotSort'));
                             
                             $latest = $timeSnaps[ $snapCount - 1];
-
-                            // if timestamp is older than now - (timeframe)
-                            call_user_func(array( $this, $func ), $fs, $latest );
+                            
+                            $this->snapMake( $fs, $latest, $time->_TimeDifference, $time->_SnapshotFormat);
                         }
                     }
                 }    //foreach filesystem
@@ -533,10 +517,10 @@ class cSnapshots {
             $date = array();
             
             // Does this snapshot match the zfs tag?
-            if( ($date = strptime( $snap->_Snapshot, $pTime->_ZfsTag )) === false)
+            if( ($date = strptime( $snap->_Snapshot, $pTime->_SnapshotFormat )) === false)
                 continue;
 
-            // weekly bug (strftime doesnt work with %W, its not implemented in LIBC, atleast on freebsd)
+            // weekly bug (strptime doesnt work with %W, its not implemented in LIBC, atleast on freebsd)
             if( strpos( $snap->_Snapshot, 'weekly-' ) !== false ) {
                 
                 // weekly-year-wk
@@ -545,7 +529,6 @@ class cSnapshots {
                 $snap->_Timestamp = strtotime("{$date[1]}W{$date[2]}");
 
             } else {
-            
 
                 $snap->_Timestamp = mktime( $date['tm_hour'], $date['tm_min'], $date['tm_sec'], 
                                             $date['tm_mon'], $date['tm_mday'], $date['tm_year'] + 1900 );

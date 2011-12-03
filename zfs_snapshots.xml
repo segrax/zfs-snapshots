@@ -13,25 +13,25 @@
 		<fs id="jails"   name="syko/jails"   recursive="yes"/>
 	</fs>
 
-	<time time="15:41" format="%H:%M" keep="1">
+	<time time="21:46" format="%H:%M" keep="1">
 
-		<hour time="00" format="%M" keep="3">
+		<hour keep="3" diff="+1 hour" time="00" format="%M" snapshot="hourly-%Y-%m-%d_%H_%M_%S">
 			<home/>
 		</hour>
 
-		<day keep="7">
+		<day keep="7" diff="+1 day" snapshot="daily-%Y-%m-%d">
 			<storage/>
 			<home/>
 			<jails/>
 		</day>
 		
-		<week keep="5">
+		<week keep="5" diff="+1 week" snapshot="weekly-%Y-%W">
 			<storage/>
 			<home/>
 			<jails/>
 		</week>
 
-		<month keep="10">
+		<month keep="10" diff="+1 month" snapshot="monthly-%Y-%m">
 			<storage/>
 			<home/>
 			<jails/>

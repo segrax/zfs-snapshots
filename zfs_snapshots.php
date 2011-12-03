@@ -480,7 +480,7 @@ class cSnapshots {
         if( DEBUG === true )
             echo "zpool scrub {$pPool->_Name}\n";
         else
-            ;//$this->zPoolExecute( ZPOOL_SCRUB, $pPool );
+            $this->zPoolExecute( ZPOOL_SCRUB, $pPool );
     }
     
     /**
@@ -595,8 +595,7 @@ class cSnapshots {
         if( DEBUG === true )
             echo "zfs snapshot $Flags{$pSnapshot->_Dataset}@{$pSnapshot->_Snapshot}\n";
         else 
-            //$this->zfsExecute( ZFS_SNAP_ADD, "$Flags {$pSnapshot->_Dataset}@{$pSnapshot->_Snapshot}" );
-            ;
+            $this->zfsExecute( ZFS_SNAP_ADD, "$Flags {$pSnapshot->_Dataset}@{$pSnapshot->_Snapshot}" );
     }
     
     /**
@@ -616,8 +615,7 @@ class cSnapshots {
         if( DEBUG === true )
             echo "zfs destroy $Flags{$pSnapshot->_Dataset}@{$pSnapshot->_Snapshot}\n";
         else 
-            //$this->zfsExecute( ZFS_SNAP_REM, "{$pSnapshot->_Dataset}@{$pSnapshot->_Snapshot}" );
-            ;
+            $this->zfsExecute( ZFS_SNAP_REM, "{$pSnapshot->_Dataset}@{$pSnapshot->_Snapshot}" );
     }
     
     /**

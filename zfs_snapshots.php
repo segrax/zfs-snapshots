@@ -101,6 +101,11 @@ class cSnapshots {
     private $_Zpools = array();
     private $_ZpoolOutput = array();
     
+    /**
+     * Constructor
+     * 
+     * @param string $pConfig XML Configuration File
+     */
     public function __construct( $pConfig ) {
 
         $this->configLoad( $pConfig );
@@ -117,22 +122,30 @@ class cSnapshots {
         unset( $time );
     }
     
-    /*
+    /**
      * Find a filesystem, by its ID
+     * 
+     * @param string $pId ID of a filesystem
+     * 
+     * @return cFilesystem|bool Filesystem if found
      */
-    private function &findFilesytemByID( $pFs ) {
+    private function &findFilesytemByID( $pId ) {
         
         foreach( $this->_Filesystems as $fs ) {
 
-            if( (string) $fs->_ID === (string) $pFs)
+            if( (string) $fs->_ID === (string) $pId)
                 return $fs;
         }
 
         return false;
     }
     
-    /*
+    /**
      * Find a filesystem, by its Name
+     * 
+     * @param string $pName Name of the filesystem
+     * 
+     * @return cFilesystem|bool Filesystem if found
      */
     private function &findFilesytemByName( $pName ) {
         
@@ -145,6 +158,16 @@ class cSnapshots {
         return false;
     }
     
+    /**
+     * Load the time Node from the XML file
+     * 
+     * @param SimpleXMLElement $pTime              Current TIme Node
+     * @param string           $pDefaultTime       
+     * @param string           $pDefaultKeep       
+     * @param string           $pDefaultTimeFormat 
+     * 
+     * @return void
+     */
     private function timeLoad( $pTime, $pDefaultTime, $pDefaultKeep, $pDefaultTimeFormat ) {
         $time = new cTime();
 
@@ -186,6 +209,13 @@ class cSnapshots {
         $this->_Times[$pTime->getName()] = $time;
     }
     
+    /**
+     * Load the configuration file
+     * 
+     * @param string $pConfig Path/Filename of the configuration file
+     * 
+     * @return void
+     */
     private function configLoad( $pConfig ) {
         $this->_Filesystems = array();
         
@@ -232,6 +262,11 @@ class cSnapshots {
         }
     }
     
+    /**
+     * Process all pools and begin scrub(s) if required
+     * 
+     * @return void
+     */
     public function poolProcess() {
         
         foreach( $this->_Zpools as $pool ) {
@@ -247,13 +282,22 @@ class cSnapshots {
         }
     }
     
-    private function snapMake( $pFs, $pLatest, $pTimeDiff, $pFormat ) {
-        
-        if ( ($pLatest === null) || (time() >= strtotime( $pTimeDiff, $pLatest->_Timestamp))) {
+    /**
+     * Create a snapshot, if none exist, or if the time between snapshots is elapsed
+     * 
+     * @param cFilesystem $pFs     The filesystem
+     * @param cSnapshot   $pLatest The last available snapshot
+     * @param string      $pTime   Timeframe operating on
+     * 
+     * @return void
+     */
+    private function snapMake( $pFs, $pLatest, $pTime ) {
+
+        if ( ($pLatest === null) || (time() >= strtotime( $pTime->_TimeDifference, $pLatest->_Timestamp))) {
 
             $snapshot = new cZfsSnapshot();
             
-            $snapshot->_Snapshot = strftime( $pFormat , time() );
+            $snapshot->_Snapshot = strftime( $pTime->_SnapshotFormat , time() );
             $snapshot->_Dataset = $pFs->_Name;
 
             if( !($pLatest === null) && $snapshot->_Snapshot === $pLatest->_Snapshot )
@@ -263,14 +307,25 @@ class cSnapshots {
         }
     }
 
-    private function snapshotSort($a, $b) {
+    /**
+     * Comparea the timestamps of two snapshots
+     * 
+     * @return int -1 if the '$pA' timestamp is less than the '$pB' timestamp
+     */
+    private function snapshotSort($pA, $pB) {
         
-        if ($a->_Timestamp == $b->_Timestamp)
+        if ($pA->_Timestamp == $pB->_Timestamp)
             return 0;
         
-        return ($a->_Timestamp < $b->_Timestamp) ? -1 : 1;
+        return ($pA->_Timestamp < $pB->_Timestamp) ? -1 : 1;
     }
 
+    /**
+     * Process all time frames, and their snapshots, 
+     *  Checking if its time to create a new snapshot
+     *  
+     *  @return void
+     */
     public function zfsSnapshotCreateNew() {
 
         // Loop each time frame
@@ -294,7 +349,7 @@ class cSnapshots {
                     // No snapshots for this fs at all?
                     if( $snapCount === 0) {
 
-                        $this->snapMake( $fs, null, $time->_TimeDifference, $time->_SnapshotFormat);
+                        $this->snapMake( $fs, null, $time);
                     
                     } else {
 
@@ -306,7 +361,7 @@ class cSnapshots {
                             
                             $latest = $timeSnaps[ $snapCount - 1];
                             
-                            $this->snapMake( $fs, $latest, $time->_TimeDifference, $time->_SnapshotFormat);
+                            $this->snapMake( $fs, $latest, $time);
                         }
                     }
                 }    //foreach filesystem
@@ -314,6 +369,12 @@ class cSnapshots {
         } //foreach time
     }
     
+    /**
+     * Process all time frames, and their snapshots, 
+     *  removing anything that is expired
+     * 
+     * @return void
+     */
     public function zfsSnapshotRemoveOld() {
 
         // Loop each time frame
@@ -351,7 +412,14 @@ class cSnapshots {
 
         }
     }
-
+    /**
+     * Execute a zfs command
+     * 
+     * @param string $pZfsAction zfs command
+     * @param array  $pOptions   options to pass
+     * 
+     * @return int Error code from the exec
+     */
     private function zfsExecute( $pZfsAction, $pOptions = array() ) {
         $this->_ZfsOutput = array();
         
@@ -373,6 +441,14 @@ class cSnapshots {
         return $errorcode;
     }
     
+    /**
+     * Execute a zpool command
+     * 
+     * @param string $pZpoolAction zpool command
+     * @param array  $pOptions     options to pass
+     * 
+     * @return int Error code from the exec
+     */
     private function zPoolExecute( $pZpoolAction, $pOptions = array() ) {
         $this->_ZpoolOutput = array();
        
@@ -393,6 +469,13 @@ class cSnapshots {
         return $errorcode;
     }
     
+    /**
+     * Start a pool scrub
+     * 
+     * @param cPool $pPool The pool to check
+     * 
+     * @return void
+     */
     private function zfsScrubStart( $pPool ) {
         
         if( DEBUG === true )
@@ -401,6 +484,13 @@ class cSnapshots {
             ;//$this->zPoolExecute( ZPOOL_SCRUB, $pPool );
     }
     
+    /**
+     * Get the status of a pools' scrub
+     * 
+     * @param cPool $pPool The pool to check
+     * 
+     * @return bool True if a scrub is being executed
+     */
     private function zfsScrubStatus( $pPool ) {
         
         //if( DEBUG === true )
@@ -450,6 +540,11 @@ class cSnapshots {
          */
     }
     
+    /**
+     * Load a list of snapshots from the zfs snapshot list command
+     * 
+     * @return bool True on successful load
+     */
     private function zfsSnapshotLoad() {
         // Execute zfs
         $this->zfsExecute( ZFS_SNAP_LIST );
@@ -484,6 +579,14 @@ class cSnapshots {
         return true;
     }
     
+    /**
+     * Create a ZFS Snapshot
+     * 
+     * @param cSnapshot $pSnapshot  The snapshot object
+     * @param bool      $pRecursive Recursively create snapshots?
+     * 
+     * @return void
+     */
     public function zfsSnapshotCreate( $pSnapshot, $pRecursive ) {
         $Flags = '';
                 
@@ -497,6 +600,14 @@ class cSnapshots {
             ;
     }
     
+    /**
+     * Destroy a ZFS Snapshot
+     * 
+     * @param cSnapshot $pSnapshot  The snapshot object
+     * @param bool      $pRecursive Recursively create snapshots?
+     * 
+     * @return void
+     */
     private function zfsSnapshotRemove( $pSnapshot, $pRecursive ) {
         $Flags = '';
                 
@@ -510,6 +621,14 @@ class cSnapshots {
             ;
     }
     
+    /**
+     * Process the snapshot name to obtain the date/time of the snapshot
+     * 
+     * @param cFilesystem $pFilesystem The Filesystem being processed
+     * @param cTime       &$pTime       The timeframe being operated in
+     * 
+     * @return void
+     */
     private function ZfsSnapshotProcessTime( $pFilesystem, &$pTime ) {
 
         foreach( $pFilesystem->_ZfsSnapshots as &$snap ) {

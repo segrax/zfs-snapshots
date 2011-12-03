@@ -668,8 +668,7 @@ class cSnapshots {
  */
 function main($argc, array $argv) { 
 
-    $rev = substr( ZFS_SNAP_REVISION, 11, -2 );
-    $rev .= ' @ ' . substr( ZFS_SNAP_REVISION_DATE, 7, 19 );
+    $rev = substr( ZFS_SNAP_REVISION, 11, -2 ) . ' @ ' . substr( ZFS_SNAP_REVISION_DATE, 7, 19 );
     
     $snapver = "zfs-snapshots (svn revision: $rev)\n\n";
     echo $snapver;

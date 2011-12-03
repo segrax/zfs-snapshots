@@ -325,9 +325,9 @@ class cSnapshots {
                             call_user_func(array( $this, $func ), $fs, $latest );
                         }
                     }
-                }
-            }
-        }
+                }    //foreach filesystem
+            }// time == now
+        } //foreach time
     }
     
     public function zfsSnapshotRemoveOld() {
@@ -527,7 +527,6 @@ class cSnapshots {
     }
     
     private function ZfsSnapshotProcessTime( $pFilesystem, &$pTime ) {
-        //$pTime->_Snapshots[ $pFilesystem->_Name ] = array();
 
         foreach( $pFilesystem->_ZfsSnapshots as &$snap ) {
             

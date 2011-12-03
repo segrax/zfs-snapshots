@@ -348,7 +348,7 @@ class cSnapshots {
                     // No snapshots for this fs at all?
                     if( $snapCount === 0) {
 
-                        $this->snapshotSort( $fs, null, $time);
+                        $this->snapshotMake( $fs, null, $time);
                     
                     } else {
 
@@ -360,7 +360,7 @@ class cSnapshots {
                             
                             $latest = $timeSnaps[ $snapCount - 1];
                             
-                            $this->snapshotSort( $fs, $latest, $time);
+                            $this->snapshotMake( $fs, $latest, $time);
                         }
                     }
                 }    //foreach filesystem

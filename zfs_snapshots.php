@@ -620,7 +620,7 @@ class cSnapshots {
         
         if( DEBUG === true )
             return;
-        $this->zfsExecute( ZFS_SNAP_REM, "{$pSnapshot->_Dataset}@{$pSnapshot->_Snapshot}" );
+        $this->zfsExecute( ZFS_SNAP_REM, "$Flags{$pSnapshot->_Dataset}@{$pSnapshot->_Snapshot}" );
     }
     
     /**

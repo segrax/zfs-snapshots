@@ -616,7 +616,7 @@ class cSnapshots {
         if( $pRecursive === true )
             $Flags .= '-r ';
 
-        $this->zfsExecute( ZFS_SNAP_ADD, DEBUG, "$Flags {$pSnapshot->_Dataset}@{$pSnapshot->_Snapshot}" );
+        $this->zfsExecute( ZFS_SNAP_ADD, DEBUG, "{$Flags} {$pSnapshot->_Dataset}@{$pSnapshot->_Snapshot}" );
     }
     
     /**
@@ -633,7 +633,7 @@ class cSnapshots {
         if( $pRecursive === true )
             $Flags .= '-r ';
 
-        $this->zfsExecute( ZFS_SNAP_REM, DEBUG, "{$pSnapshot->_Dataset}@{$pSnapshot->_Snapshot}" );
+        $this->zfsExecute( ZFS_SNAP_REM, DEBUG, "{$Flags} {$pSnapshot->_Dataset}@{$pSnapshot->_Snapshot}" );
     }
     
     /**

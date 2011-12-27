@@ -12,7 +12,7 @@
  */
 
 // Dont actually execute commands
-//define('DEBUG', true);
+define('DEBUG', false);
 
 // Default Timezone
 date_default_timezone_set('Australia/Melbourne');
@@ -446,7 +446,7 @@ class cSnapshots {
         $errorcode = 0;
         $execute = implode(' ', $args);
         
-        if( $pDebug === false )
+        if( $pDebug !== true )
             exec( $execute, $this->_ZfsOutput, $errorcode);
         
         $this->log( $execute );

@@ -446,6 +446,8 @@ class cSnapshots {
         $errorcode = 0;
         $execute = implode(' ', $args);
         
+        echo $exeute;
+        
         if( $pDebug !== true )
             exec( $execute, $this->_ZfsOutput, $errorcode);
         
@@ -478,7 +480,9 @@ class cSnapshots {
         $errorcode = 0;
         $execute = implode(' ', $args);
         
-        if( $pDebug === false )
+        echo $execute;
+        
+        if( $pDebug !== true )
             exec( $execute, $this->_ZpoolOutput, $errorcode);
        
         $this->log( $execute );
@@ -558,7 +562,7 @@ class cSnapshots {
      */
     private function zfsSnapshotLoad() {
         // Execute zfs
-        $this->zfsExecute( ZFS_SNAP_LIST );
+        $this->zfsExecute( ZFS_SNAP_LIST, false);
 
         // Remove header
         if( strpos( array_shift($this->_ZfsOutput), ZFS_SNAP_OUT ) === false )

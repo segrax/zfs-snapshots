@@ -449,9 +449,12 @@ class cSnapshots {
         echo "$execute\n";
         
         if( $pDebug !== true )
+        {
             exec( $execute, $this->_ZfsOutput, $errorcode);
         
-        $this->log( $execute );
+            if( $pZfsAction !== ZFS_SNAP_LIST)
+                $this->log( $execute );
+        }
         
         return $errorcode;
     }

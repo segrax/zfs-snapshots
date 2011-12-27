@@ -419,6 +419,7 @@ class cSnapshots {
     {
         
         $str = str_replace( ZFS_BINARY . ' ', '', $str );
+        $str = str_replace( '2>&1', '', $str );
         
         file_put_contents( LOG_FILE, "$str\n" );
         

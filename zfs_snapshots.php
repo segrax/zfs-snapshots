@@ -20,7 +20,7 @@ date_default_timezone_set('Australia/Melbourne');
 // Default Config
 define('ZFS_SNAP_CONF', dirname(__FILE__) . '/zfs_snapshots.xml');
 
-define('LOG_FILE', __DIR__ . 'action.log' );
+define('LOG_FILE', __DIR__ . '/action.log' );
 
 // Binarys
 define('ZFS_BINARY',    '/sbin/zfs');
@@ -446,7 +446,7 @@ class cSnapshots {
         $errorcode = 0;
         $execute = implode(' ', $args);
         
-        echo $exeute;
+        echo "$execute\n";
         
         if( $pDebug !== true )
             exec( $execute, $this->_ZfsOutput, $errorcode);
@@ -480,7 +480,7 @@ class cSnapshots {
         $errorcode = 0;
         $execute = implode(' ', $args);
         
-        echo $execute;
+        echo "$execute\n";
         
         if( $pDebug !== true )
             exec( $execute, $this->_ZpoolOutput, $errorcode);
@@ -561,6 +561,7 @@ class cSnapshots {
      * @return bool True on successful load
      */
     private function zfsSnapshotLoad() {
+
         // Execute zfs
         $this->zfsExecute( ZFS_SNAP_LIST, false);
 

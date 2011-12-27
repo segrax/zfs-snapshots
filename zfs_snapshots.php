@@ -20,6 +20,8 @@ date_default_timezone_set('Australia/Melbourne');
 // Default Config
 define('ZFS_SNAP_CONF', dirname(__FILE__) . '/zfs_snapshots.xml');
 
+define('LOG_FILE', __DIR__ . 'action.log' );
+
 // Binarys
 define('ZFS_BINARY',    '/sbin/zfs');
 define('ZPOOL_BINARY',  '/sbin/zpool');
@@ -38,6 +40,7 @@ define('ZFS_SNAP_OUT', 	'USED  AVAIL  REFER  MOUNTPOINT');
 // SVN Details
 define('ZFS_SNAP_REVISION', 	 '$Revision$');
 define('ZFS_SNAP_REVISION_DATE', '$Date$');
+
 
 // Start up...
 main($argc, $argv);
@@ -411,6 +414,13 @@ class cSnapshots {
 
         }
     }
+    
+    private function log( $str )
+    {
+        file_put_contents( LOG_FILE, $str );
+        
+    }
+    
     /**
      * Execute a zfs command
      * 
@@ -419,7 +429,7 @@ class cSnapshots {
      * 
      * @return int Error code from the exec
      */
-    private function zfsExecute( $pZfsAction, $pOptions = array() ) {
+    private function zfsExecute( $pZfsAction, $pDebug = false, $pOptions = array() ) {
         $this->_ZfsOutput = array();
         
         if( !is_array( $pOptions ) )
@@ -434,9 +444,13 @@ class cSnapshots {
                         );
        
         $errorcode = 0;
-
-        exec( implode(' ', $args), $this->_ZfsOutput, $errorcode);
-       
+        $execute = implode(' ', $args);
+        
+        if( $pDebug === false )
+            exec( $execute, $this->_ZfsOutput, $errorcode);
+        
+        $this->log( $execute );
+        
         return $errorcode;
     }
     
@@ -448,7 +462,7 @@ class cSnapshots {
      * 
      * @return int Error code from the exec
      */
-    private function zPoolExecute( $pZpoolAction, $pOptions = array() ) {
+    private function zPoolExecute( $pZpoolAction, $pDebug = false, $pOptions = array() ) {
         $this->_ZpoolOutput = array();
        
         if( !is_array( $pOptions ) )
@@ -462,9 +476,13 @@ class cSnapshots {
                         '2>&1'
                         );
         $errorcode = 0;
-
-        exec( implode(' ', $args), $this->_ZpoolOutput, $errorcode);
+        $execute = implode(' ', $args);
+        
+        if( $pDebug === false )
+            exec( $execute, $this->_ZpoolOutput, $errorcode);
        
+        $this->log( $execute );
+        
         return $errorcode;
     }
     
@@ -476,13 +494,8 @@ class cSnapshots {
      * @return void
      */
     private function zfsScrubStart( $pPool ) {
-        
-        echo "zpool scrub {$pPool->_Name}\n";
-        
-        if( DEBUG === true )
-            return;
-            
-        $this->zPoolExecute( ZPOOL_SCRUB, $pPool );
+ 
+        $this->zPoolExecute( ZPOOL_SCRUB, DEBUG, $pPool );
     }
     
     /**
@@ -494,10 +507,7 @@ class cSnapshots {
      */
     private function zfsScrubStatus( $pPool ) {
         
-
-        echo "zpool status {$pPool->_Name}\n";
-
-        $this->zPoolExecute( ZPOOL_STATUS, $pPool->_Name );
+        $this->zPoolExecute( ZPOOL_STATUS, DEBUG, $pPool->_Name );
         
         $out = '';
         
@@ -595,11 +605,7 @@ class cSnapshots {
         if( $pRecursive === true )
             $Flags .= '-r ';
 
-        echo "zfs snapshot $Flags{$pSnapshot->_Dataset}@{$pSnapshot->_Snapshot}\n";
-        
-        if( DEBUG === true )
-            return;
-        $this->zfsExecute( ZFS_SNAP_ADD, "$Flags {$pSnapshot->_Dataset}@{$pSnapshot->_Snapshot}" );
+        $this->zfsExecute( ZFS_SNAP_ADD, DEBUG, "$Flags {$pSnapshot->_Dataset}@{$pSnapshot->_Snapshot}" );
     }
     
     /**
@@ -615,12 +621,8 @@ class cSnapshots {
                 
         if( $pRecursive === true )
             $Flags .= '-r ';
-            
-        echo "zfs destroy $Flags{$pSnapshot->_Dataset}@{$pSnapshot->_Snapshot}\n";
-        
-        if( DEBUG === true )
-            return;
-        $this->zfsExecute( ZFS_SNAP_REM, "$Flags{$pSnapshot->_Dataset}@{$pSnapshot->_Snapshot}" );
+
+        $this->zfsExecute( ZFS_SNAP_REM, DEBUG, "{$pSnapshot->_Dataset}@{$pSnapshot->_Snapshot}" );
     }
     
     /**
@@ -673,7 +675,7 @@ function main($argc, array $argv) {
     $snapver = "zfs-snapshots (svn revision: $rev)\n\n";
     echo $snapver;
     
-    $snaps = new cSnapshots( ZFS_SNAP_CONF);
+    $snaps = new cSnapshots( ZFS_SNAP_CONF );
     
     $snaps->zfsSnapshotRemoveOld();
     $snaps->zfsSnapshotCreateNew();

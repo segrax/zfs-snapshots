@@ -418,8 +418,9 @@ class cSnapshots {
     private function log( $str )
     {
         
-        $str = str_replace( ZFS_BINARY, '', $str );
-        file_put_contents( LOG_FILE, $str );
+        $str = str_replace( ZFS_BINARY . ' ', '', $str );
+        
+        file_put_contents( LOG_FILE, "$str\n" );
         
     }
     

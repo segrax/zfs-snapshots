@@ -418,12 +418,15 @@ class cSnapshots {
     
     private function log( $str )
     {
-        
-        $str = str_replace( ZFS_BINARY . ' ', '', $str );
+        // Remove the binarys from the string
+        $str = str_replace( ZFS_BINARY   . ' ', '', $str );
+	$str = str_replace( ZPOOL_BINARY . ' ', '', $str );
+
+	// Remove the end output command
         $str = str_replace( '2>&1', '', $str );
         
+		
         file_put_contents( LOG_FILE, "$str\n", FILE_APPEND );
-        
     }
     
     /**

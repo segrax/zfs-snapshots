@@ -27,6 +27,7 @@ define('ZFS_BINARY',    '/sbin/zfs');
 define('ZPOOL_BINARY',  '/sbin/zpool');
 
 // Pool Commands
+define('ZPOOL_STATUS',  'status');
 define('ZPOOL_SCRUB',   'scrub');
 
 // ZFS commands
@@ -421,7 +422,7 @@ class cSnapshots {
         $str = str_replace( ZFS_BINARY . ' ', '', $str );
         $str = str_replace( '2>&1', '', $str );
         
-        file_put_contents( LOG_FILE, "$str\n" );
+        file_put_contents( LOG_FILE, "$str\n", FILE_APPEND );
         
     }
     
@@ -506,7 +507,7 @@ class cSnapshots {
      */
     private function zfsScrubStart( $pPool ) {
  
-        $this->zPoolExecute( ZPOOL_SCRUB, DEBUG, $pPool );
+        $this->zPoolExecute( ZPOOL_SCRUB, DEBUG, $pPool->_Name );
     }
     
     /**

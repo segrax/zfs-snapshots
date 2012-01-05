@@ -11,9 +11,15 @@
 		<fs id="storage" name="syko/storage" recursive="yes"/>
 		<fs id="home"    name="syko/home"    recursive="yes"/>
 		<fs id="jails"   name="syko/jails"   recursive="yes"/>
-		<fs id="video"   name="syko/storage/Video" recursive="yes"/>
-		<fs id="systems" name="syko/storage/Systems" recursive="yes"/>
+		<fs id="vms"	 name="syko/vms"     recursive="yes"/>
+		<fs id="fbsd"	 name="syko/os/fbsd82" resursive="yes"/>
 
+<!--
+		<fs id="video"   name="syko/storage/Video" recursive="yes"/>
+		<fs id="music"   name="syko/storage/Music" recursive="yes"/>
+		<fs id="systems" name="syko/storage/Systems" recursive="yes"/>
+		<fs id="ebooks"  name="syko/storage/eBooks" recursive="yes"/>
+-->
 	</fs>
 
 	<time time="22:08" format="%H:%M" keep="1">
@@ -27,7 +33,8 @@
 			<home/>
 			<jails/>
 			<video/>
-			<systems/>
+			<vms/>
+			<fbsd/>
 		</day>
 		
 		<week keep="5" diff="+1 week" snapshot="weekly-%Y-%W">
@@ -35,15 +42,16 @@
 			<home/>
 			<jails/>
 			<video/>
-			<systems/>
+			<vms/>
+			<fbsd/>
 		</week>
 
 		<month keep="100" diff="+1 month" snapshot="monthly-%Y-%m">
 			<storage/>
 			<home/>
 			<jails/>
-			<video/>
-			<systems/>
+			<vms/>
+			<fbsd/>
 		</month>
 	</time>
 
